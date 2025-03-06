@@ -1,0 +1,50 @@
+import { ChatInterface } from "@/components/chat-interface"
+
+export default function Home() {
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-14 items-center">
+          <div className="mr-4 flex">
+            <a className="mr-6 flex items-center space-x-2" href="/">
+              <span className="font-bold">AI Workout Assistant</span>
+            </a>
+          </div>
+        </div>
+      </header>
+      <main className="flex-1">
+        <div className="container flex-1 items-start md:grid md:grid-cols-[220px_minmax(0,1fr)] md:gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-10">
+          <aside className="fixed top-14 z-30 -ml-2 hidden h-[calc(100vh-3.5rem)] w-full shrink-0 overflow-y-auto border-r md:sticky md:block">
+            <div className="h-full py-6 pl-8 pr-6 lg:py-8">
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1">
+                  <h2 className="text-lg font-semibold">Navigation</h2>
+                  <nav className="flex flex-col gap-1">
+                    <a className="text-muted-foreground hover:text-foreground" href="/">
+                      Dashboard
+                    </a>
+                    <a className="text-muted-foreground hover:text-foreground" href="/workouts">
+                      My Workouts
+                    </a>
+                    <a className="text-muted-foreground hover:text-foreground" href="/profile">
+                      Profile
+                    </a>
+                    <a className="text-muted-foreground hover:text-foreground" href="/settings">
+                      Settings
+                    </a>
+                  </nav>
+                </div>
+              </div>
+            </div>
+          </aside>
+          <div className="w-full min-w-0">
+            <div className="p-6">
+              <ChatInterface />
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  )
+}
+
