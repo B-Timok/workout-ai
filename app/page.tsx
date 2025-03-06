@@ -1,6 +1,21 @@
 import { ChatInterface } from "@/components/chat-interface"
+import { createClient } from '@/lib/utils/supabase/server'
+import { cookies } from 'next/headers'
 
-export default function Home() {
+export default async function Home() {
+  // Initialize Supabase client
+  const cookieStore = cookies()
+  const supabase = createClient(cookieStore)
+  
+  // Fetch workouts (once you create the workouts table)
+  // If the table doesn't exist yet, this will return an empty array
+  const { data: workouts, error } = await supabase.from('workouts').select('*').limit(5)
+  
+  // You can handle errors if needed
+  if (error) {
+    console.error('Error fetching workouts:', error)
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -34,6 +49,25 @@ export default function Home() {
                     </a>
                   </nav>
                 </div>
+                
+                {/* Display workouts from Supabase if available */}
+                {workouts && workouts.length > 0 && (
+                  <div className="flex flex-col gap-1 mt-4">
+                    <h2 className="text-lg font-semibold">Recent Workouts</h2>
+                    <ul className="flex flex-col gap-1">
+                      {workouts.map((workout) => (
+                        <li key={workout.id}>
+                          <a 
+                            className="text-muted-foreground hover:text-foreground" 
+                            href={`/workouts/${workout.id}`}
+                          >
+                            {workout.name}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </div>
           </aside>
@@ -47,4 +81,3 @@ export default function Home() {
     </div>
   )
 }
-
