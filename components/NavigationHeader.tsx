@@ -45,24 +45,22 @@ export default function NavigationHeader() {
       <div className="container flex h-14 items-center">
         <div className="flex flex-1 items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Link href="/" className="font-bold">
+            <Link href={user ? "/" : "/login"} className="font-bold">
               Workout Assistant
             </Link>
             
             <nav className="flex items-center space-x-4">
-              {/* Always show the home link */}
-              <Link 
-                href="/" 
-                className={`text-sm font-medium transition-colors hover:text-primary ${
-                  isActivePath("/") ? "text-primary" : ""
-                }`}
-              >
-                Home
-              </Link>
-              
               {/* Only show these links if the user is logged in */}
               {!loading && user && (
                 <>
+                  <Link 
+                    href="/" 
+                    className={`text-sm font-medium transition-colors hover:text-primary ${
+                      isActivePath("/") ? "text-primary" : ""
+                    }`}
+                  >
+                    Home
+                  </Link>
                   <Link 
                     href="/dashboard" 
                     className={`text-sm font-medium transition-colors hover:text-primary ${
