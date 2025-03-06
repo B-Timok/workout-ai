@@ -29,8 +29,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname === "/"}>
-                <Link href="/">
+              <SidebarMenuButton asChild isActive={pathname === "/dashboard"}>
+                <Link href="/dashboard">
                   <Home className="mr-2" />
                   <span>Dashboard</span>
                 </Link>
