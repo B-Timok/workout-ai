@@ -13,13 +13,13 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     title: "Workout AI",
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     capable: true,
   },
 }
 
 export const viewport: Viewport = {
-  themeColor: "#4338ca",
+  themeColor: "#10b981",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
