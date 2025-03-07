@@ -6,8 +6,8 @@ import OpenAI from 'openai';
 // Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-  timeout: 60000, // Add this line - sets a 60 second timeout for all requests
-  maxRetries: 3    // Add this line - allows up to 3 retries if the request fails
+  timeout: 60000, // 60 second global timeout for all requests
+  maxRetries: 3    // Allow up to 3 retries if the request fails
 });
 
 // This function generates a workout plan using OpenAI
@@ -127,8 +127,9 @@ async function generateWorkoutWithOpenAI(context: any) {
   `;
 
   try {
-    console.log("Starting OpenAI request...");
-    const startTime = Date.now(); // Add this line to record start time
+    // First attempt with standard settings
+    console.log("Starting OpenAI request with gpt-3.5-turbo...");
+    const startTime = Date.now();
     
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
@@ -145,9 +146,9 @@ async function generateWorkoutWithOpenAI(context: any) {
       response_format: { type: "json_object" }
     });
     
-    const endTime = Date.now(); // Add this line to record end time
-    const duration = (endTime - startTime) / 1000; // Convert to seconds
-    console.log(`OpenAI request completed in ${duration} seconds`); // Log the duration
+    const endTime = Date.now();
+    const duration = (endTime - startTime) / 1000;
+    console.log(`OpenAI request completed in ${duration} seconds`);
     
     // Parse the JSON response
     const workoutPlan = JSON.parse(completion.choices[0].message.content || "{}");
@@ -157,10 +158,56 @@ async function generateWorkoutWithOpenAI(context: any) {
       exercises: workoutPlan.exercises || []
     };
   } catch (error) {
-    console.error("Error generating workout with OpenAI:", error);
+    console.error("First attempt failed:", error);
     
-    // Fallback to the default workout generator if OpenAI fails
-    return generateFallbackWorkout(context);
+    // If first attempt fails, try with simplified prompt
+    try {
+      console.log("Trying fallback with simplified prompt...");
+      
+      // Create a simpler prompt
+      const simplifiedPrompt = `
+        Create a basic ${context.difficulty} workout for ${context.fitnessLevel} focusing on ${context.focusAreas.join(", ")}.
+        Duration: ${context.duration} minutes. 
+        
+        Return as JSON with:
+        {
+          "description": "Brief workout description",
+          "exercises": [
+            {
+              "name": "Exercise name",
+              "description": "Brief instruction",
+              "sets": number,
+              "reps": "rep range"
+            }
+          ]
+        }
+      `;
+      
+      // Try with a simpler model and prompt
+      const fallbackCompletion = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo", 
+        messages: [
+          { role: "system", content: "You are a fitness trainer. Keep responses brief and practical." },
+          { role: "user", content: simplifiedPrompt }
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 1000, // Limit token usage for faster response
+      });
+      
+      // Parse the simplified response
+      const fallbackPlan = JSON.parse(fallbackCompletion.choices[0].message.content || "{}");
+      console.log("Fallback generation successful");
+      
+      return {
+        description: fallbackPlan.description || "Custom workout plan",
+        exercises: fallbackPlan.exercises || []
+      };
+    } catch (fallbackError) {
+      console.error("Fallback attempt also failed:", fallbackError);
+      // Now use the pre-defined fallback workout
+      console.log("Using hardcoded fallback workout");
+      return generateFallbackWorkout(context);
+    }
   }
 }
 
