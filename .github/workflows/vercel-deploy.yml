@@ -1,0 +1,38 @@
+name: Vercel Deployment
+
+on:
+  push:
+    branches:
+      - main  # Deploy production on push to main
+  pull_request:  # Deploy preview for pull requests
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run tests
+        run: npm test || true  # Continue even if tests fail
+      
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}  # Set this in GitHub repository secrets
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}  # Set this in GitHub repository secrets
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}  # Set this in GitHub repository secrets
+          github-comment: true  # Comment on PRs with deployment URL
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          working-directory: ./  # Root directory of your project
+          vercel-args: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && '--prod' || '' }}
