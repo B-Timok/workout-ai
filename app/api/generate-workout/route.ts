@@ -18,11 +18,16 @@ export async function POST(request: Request) {
     // Get the user session for authentication
     const cookieStore = cookies();
     const supabase = createClient(cookieStore);
-    const { data: { user }, error } = await supabase.auth.getUser();
     
-    if (error || !user) {
+    // Modified auth check to avoid redirects in serverless functions
+    const { data, error: authError } = await supabase.auth.getUser();
+    const user = data?.user;
+    
+    // Better error handling for auth issues
+    if (authError || !user) {
+      console.error("Auth error:", authError);
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { error: "Authentication required. Please log in." },
         { status: 401 }
       );
     }
