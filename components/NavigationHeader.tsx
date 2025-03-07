@@ -57,11 +57,6 @@ export default function NavigationHeader() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      {/* Replace the simple div with a properly styled spacer that matches iOS status bar */}
-      <div 
-        className="w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
-        style={{ height: 'env(safe-area-inset-top, 0px)' }}
-      />
       <div className="container flex h-14 items-center">
         <div className="flex flex-1 items-center justify-between">
           {/* Logo and brand */}
@@ -78,8 +73,8 @@ export default function NavigationHeader() {
               user &&
               navigationItems.map(({ href, label, icon: Icon }) => {
                 // For Home link, we'll use a dummy href that will cause a 404
-                const actualHref = label === "Home" ? "/home-coming-soon" : href;
-                
+                const actualHref = label === "Home" ? "/home-coming-soon" : href
+
                 return (
                   <Link
                     key={href}
@@ -91,7 +86,7 @@ export default function NavigationHeader() {
                     <Icon className="h-4 w-4" />
                     <span>{label}</span>
                   </Link>
-                );
+                )
               })}
           </nav>
 
@@ -147,8 +142,8 @@ export default function NavigationHeader() {
                     <div className="flex flex-col space-y-4 py-4">
                       {navigationItems.map(({ href, label, icon: Icon }) => {
                         // Same handling for mobile menu
-                        const actualHref = label === "Home" ? "/home-coming-soon" : href;
-                        
+                        const actualHref = label === "Home" ? "/home-coming-soon" : href
+
                         return (
                           <Link
                             key={href}
@@ -161,7 +156,7 @@ export default function NavigationHeader() {
                             <Icon className="h-4 w-4" />
                             <span>{label}</span>
                           </Link>
-                        );
+                        )
                       })}
                       <div className="border-t pt-4">
                         <form action="/auth/signout" method="post">
@@ -194,3 +189,4 @@ export default function NavigationHeader() {
     </header>
   )
 }
+

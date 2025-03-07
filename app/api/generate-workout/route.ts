@@ -110,11 +110,11 @@ async function generateWorkoutWithOpenAI(context: any) {
     
     Please format the response as a JSON object with the following structure:
     {
-      "description": "A detailed description of the workout including its benefits and how it relates to the user's goals",
+      "description": "A concise description of the workout",
       "exercises": [
         {
           "name": "Exercise Name",
-          "description": "Detailed instructions on how to perform the exercise",
+          "description": "Simple instructions on how to perform the exercise",
           "sets": number (null if not applicable),
           "reps": "rep range as string" (null if not applicable),
           "duration": "duration as string (e.g., '30 seconds')" (null if not applicable)
@@ -123,7 +123,8 @@ async function generateWorkoutWithOpenAI(context: any) {
       ]
     }
     
-    Ensure the workout is appropriate for the user's fitness level and goals. Include warm-up and cool-down exercises for workouts 30 minutes or longer.
+    IMPORTANT: Include no more than 3 exercises total for the entire workout.
+    Ensure the workout is appropriate for the user's fitness level and goals. Include warm-up and cool-down exercises as part of the 5-exercise limit.
   `;
 
   try {
@@ -153,9 +154,15 @@ async function generateWorkoutWithOpenAI(context: any) {
     // Parse the JSON response
     const workoutPlan = JSON.parse(completion.choices[0].message.content || "{}");
     
+    // Ensure there are no more than 5 exercises
+    let exercises = workoutPlan.exercises || [];
+    if (exercises.length > 5) {
+      exercises = exercises.slice(0, 5);
+    }
+    
     return {
       description: workoutPlan.description || "Custom workout plan",
-      exercises: workoutPlan.exercises || []
+      exercises: exercises
     };
   } catch (error) {
     console.error("First attempt failed:", error);
@@ -168,6 +175,8 @@ async function generateWorkoutWithOpenAI(context: any) {
       const simplifiedPrompt = `
         Create a basic ${context.difficulty} workout for ${context.fitnessLevel} focusing on ${context.focusAreas.join(", ")}.
         Duration: ${context.duration} minutes. 
+        
+        IMPORTANT: Include no more than 5 exercises in total.
         
         Return as JSON with:
         {
@@ -198,9 +207,15 @@ async function generateWorkoutWithOpenAI(context: any) {
       const fallbackPlan = JSON.parse(fallbackCompletion.choices[0].message.content || "{}");
       console.log("Fallback generation successful");
       
+      // Ensure there are no more than 5 exercises
+      let exercises = fallbackPlan.exercises || [];
+      if (exercises.length > 5) {
+        exercises = exercises.slice(0, 5);
+      }
+      
       return {
         description: fallbackPlan.description || "Custom workout plan",
-        exercises: fallbackPlan.exercises || []
+        exercises: exercises
       };
     } catch (fallbackError) {
       console.error("Fallback attempt also failed:", fallbackError);
