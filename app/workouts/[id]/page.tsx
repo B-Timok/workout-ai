@@ -24,6 +24,9 @@ interface Workout {
   duration: number;
   difficulty: string;
   created_at: string;
+  completed?: boolean;
+  completed_at?: string;
+  completed_exercises?: string[];
 }
 
 export default function WorkoutDetailsPage({ params }: { params: { id: string } }) {
@@ -35,41 +38,59 @@ export default function WorkoutDetailsPage({ params }: { params: { id: string } 
   const [completedExercises, setCompletedExercises] = useState<string[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [redirectToast, setRedirectToast] = useState(false);
 
   useEffect(() => {
     async function fetchWorkout() {
       setLoading(true);
 
-      // Check if the user is logged in
-      const { data: { user } } = await supabase.auth.getUser();
+      try {
+        // Check if the user is logged in
+        const { data: { user } } = await supabase.auth.getUser();
 
-      if (!user) {
-        router.push("/login");
-        return;
-      }
-
-      // Get the workout details
-      const { data: workout, error } = await supabase
-        .from("workouts")
-        .select("*")
-        .eq("id", params.id)
-        .single();
-
-      if (error) {
-        console.error("Error fetching workout:", error);
-        setError("Could not load this workout. It may not exist or you don't have permission to view it.");
-      } else if (workout) {
-        // Verify that the workout belongs to the current user
-        if (workout.user_id !== user.id) {
-          setError("You don't have permission to view this workout.");
-          setLoading(false);
+        if (!user) {
+          router.push("/login");
           return;
         }
 
-        setWorkout(workout);
-      }
+        // Get the workout details
+        const { data: workout, error } = await supabase
+          .from("workouts")
+          .select("*")
+          .eq("id", params.id)
+          .single();
 
-      setLoading(false);
+        if (error) {
+          console.error("Error fetching workout:", error);
+          setError("Could not load this workout. It may not exist or you don't have permission to view it.");
+        } else if (workout) {
+          // Verify that the workout belongs to the current user
+          if (workout.user_id !== user.id) {
+            setError("You don't have permission to view this workout.");
+            setLoading(false);
+            return;
+          }
+
+          console.log("Fetched workout:", workout);
+          setWorkout(workout);
+          
+          // If this workout has saved exercises, restore them
+          if (workout.completed_exercises && Array.isArray(workout.completed_exercises)) {
+            console.log("Restoring completed exercises:", workout.completed_exercises);
+            setCompletedExercises(workout.completed_exercises);
+          } else {
+            console.log("No completed exercises to restore", workout.completed_exercises);
+            setCompletedExercises([]);
+          }
+        }
+      } catch (err) {
+        console.error("Unexpected error loading workout:", err);
+        setError("An unexpected error occurred while loading the workout.");
+      } finally {
+        setLoading(false);
+      }
     }
 
     fetchWorkout();
@@ -84,6 +105,99 @@ export default function WorkoutDetailsPage({ params }: { params: { id: string } 
         return [...prev, exerciseName];
       }
     });
+  };
+
+  // Save workout completion status to database
+  const saveWorkoutProgress = async () => {
+    if (!workout) return;
+    
+    setIsSaving(true);
+    setSaveSuccess(false);
+    setRedirectToast(false);
+    
+    try {
+      console.log("Saving progress:", completedExercises);
+      
+      // For now, just save which exercises are completed
+      const { data, error } = await supabase
+        .from('workouts')
+        .update({
+          completed_exercises: completedExercises
+        })
+        .eq('id', workout.id)
+        .select();
+        
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
+      
+      console.log("Update response:", data);
+      
+      // Update the local workout state to reflect changes
+      setWorkout({
+        ...workout,
+        completed_exercises: completedExercises
+      });
+      
+      // Only show the "Progress Saved" message for the save progress action
+      setSaveSuccess(true);
+      setTimeout(() => {
+        setSaveSuccess(false);
+      }, 3000);
+      
+    } catch (error) {
+      console.error('Error saving workout progress:', error);
+      setError('Failed to save workout progress. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  
+  // Mark workout as fully completed
+  const completeWorkout = async () => {
+    if (!workout) return;
+    
+    setIsSaving(true);
+    setSaveSuccess(false); // Make sure this is off
+    setRedirectToast(false);
+    
+    try {
+      const now = new Date().toISOString();
+      
+      const { error } = await supabase
+        .from('workouts')
+        .update({
+          completed: true,
+          completed_at: now,
+          completed_exercises: completedExercises
+        })
+        .eq('id', workout.id);
+        
+      if (error) {
+        throw error;
+      }
+      
+      // Update the local workout state to reflect changes
+      setWorkout({
+        ...workout,
+        completed: true,
+        completed_at: now,
+        completed_exercises: completedExercises
+      });
+      
+      // Show the redirect toast and redirect to dashboard after a delay
+      setRedirectToast(true);
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Error completing workout:', error);
+      setError('Failed to complete workout. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Format difficulty level for display
@@ -300,19 +414,40 @@ export default function WorkoutDetailsPage({ params }: { params: { id: string } 
                 <span className="font-medium">{completedExercises.length}</span> of <span className="font-medium">{workout.exercises.length}</span> exercises completed
               </div>
 
-              {completedExercises.length === workout.exercises.length && workout.exercises.length > 0 ? (
+              {workout.completed ? (
                 <div className="p-4 bg-primary/10 text-primary rounded-lg">
                   <h3 className="font-bold text-lg">Workout Complete! 🎉</h3>
                   <p>Great job finishing your workout!</p>
                 </div>
+              ) : completedExercises.length === workout.exercises.length ? (
+                <button
+                  onClick={completeWorkout}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                  disabled={isSaving}
+                >
+                  {isSaving ? "Completing..." : "Complete Workout 🎉"}
+                </button>
               ) : (
                 <button
-                  onClick={() => router.push("/dashboard")}
+                  onClick={saveWorkoutProgress}
                   className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+                  disabled={isSaving}
                 >
-                  Save Progress
+                  {isSaving ? "Saving..." : "Save Progress"}
                 </button>
               )}
+              {saveSuccess && (
+                <div className="mt-4 p-4 bg-primary/10 text-primary rounded-lg">
+                  <h3 className="font-bold text-lg">Progress Saved! 🎉</h3>
+                  <p>Your workout progress has been saved.</p>
+                </div>
+              )}
+              {/* {redirectToast && (
+                <div className="mt-4 p-4 bg-green-100 text-green-600 rounded-lg">
+                  <h3 className="font-bold text-lg">Workout Completed! 🎉</h3>
+                  <p>Redirecting to dashboard...</p>
+                </div>
+              )} */}
             </div>
           </div>
         </div>
