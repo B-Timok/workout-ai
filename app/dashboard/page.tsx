@@ -22,6 +22,8 @@ export default function DashboardPage() {
   const [userName, setUserName] = useState("User");
   const [workouts, setWorkouts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState<string | null>(null);
 
   // Current date info for monthly calculations
   const currentDate = new Date();
@@ -227,16 +229,50 @@ export default function DashboardPage() {
   // Format date with time helper
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'numeric', 
-      day: 'numeric', 
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
       year: 'numeric'
-    }) + ' @ ' + date.toLocaleTimeString('en-US', {
+    }).format(date) + ' @ ' + date.toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
       hour12: true
     });
   };
+
+  // Handle workout deletion
+  async function handleDeleteWorkout(workoutId: string) {
+    try {
+      // Set the current workout to deleting state
+      setIsDeleting(workoutId);
+      
+      const supabase = createClient();
+      
+      // Delete the workout from the database
+      const { error } = await supabase
+        .from('workouts')
+        .delete()
+        .eq('id', workoutId);
+        
+      if (error) throw error;
+      
+      // Update the local state to remove the workout
+      setWorkouts(workouts.filter(workout => workout.id !== workoutId));
+      
+      // Update total workouts count in the stats
+      setUserData(prev => ({
+        ...prev,
+        totalWorkouts: prev.totalWorkouts - 1
+      }));
+      
+    } catch (error) {
+      console.error('Error deleting workout:', error);
+      // You could add a toast notification here for error feedback
+    } finally {
+      // Reset deleting state
+      setIsDeleting(null);
+    }
+  }
 
   return (
     <>
@@ -373,7 +409,12 @@ export default function DashboardPage() {
                         <Button variant="outline" size="sm" asChild>
                           <Link href={`/workouts/${workout.id}`}>View Details</Link>
                         </Button>
-                        <Button variant="ghost" size="icon" className="text-destructive">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="text-destructive"
+                          onClick={() => setShowDeleteConfirmation(workout.id)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -430,6 +471,37 @@ export default function DashboardPage() {
           </Card>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirmation && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-lg shadow-lg max-w-md w-full">
+            <h3 className="text-xl font-bold mb-4">Delete Workout</h3>
+            <p className="mb-6">Are you sure you want to delete this workout? This action cannot be undone.</p>
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteConfirmation(null)}
+                disabled={isDeleting !== null}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (showDeleteConfirmation) {
+                    handleDeleteWorkout(showDeleteConfirmation);
+                    setShowDeleteConfirmation(null);
+                  }
+                }}
+                disabled={isDeleting !== null}
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
