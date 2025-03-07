@@ -5,11 +5,15 @@ import OpenAI from 'openai';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+  apiKey: process.env.OPENAI_API_KEY,
+  timeout: 60000, // Add this line - sets a 60 second timeout for all requests
+  maxRetries: 3    // Add this line - allows up to 3 retries if the request fails
 });
 
 // This function generates a workout plan using OpenAI
 export async function POST(request: Request) {
+  const requestStartTime = Date.now(); // Add this at the start of your function
+  
   try {
     // Parse the request body
     const requestData = await request.json();
@@ -66,6 +70,9 @@ export async function POST(request: Request) {
     
     // Generate the workout plan using OpenAI
     const workout = await generateWorkoutWithOpenAI(userContext);
+
+    const totalRequestTime = (Date.now() - requestStartTime) / 1000; // Convert to seconds
+    console.log(`Total API request completed in ${totalRequestTime} seconds`); // Log total time
     
     return NextResponse.json({
       name: workoutName,
@@ -120,8 +127,11 @@ async function generateWorkoutWithOpenAI(context: any) {
   `;
 
   try {
+    console.log("Starting OpenAI request...");
+    const startTime = Date.now(); // Add this line to record start time
+    
     const completion = await openai.chat.completions.create({
-      model: "gpt-4-turbo",
+      model: "gpt-3.5-turbo",
       messages: [
         {
           role: "system",
@@ -134,7 +144,11 @@ async function generateWorkoutWithOpenAI(context: any) {
       ],
       response_format: { type: "json_object" }
     });
-
+    
+    const endTime = Date.now(); // Add this line to record end time
+    const duration = (endTime - startTime) / 1000; // Convert to seconds
+    console.log(`OpenAI request completed in ${duration} seconds`); // Log the duration
+    
     // Parse the JSON response
     const workoutPlan = JSON.parse(completion.choices[0].message.content || "{}");
     
