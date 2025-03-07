@@ -57,6 +57,8 @@ export default function NavigationHeader() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      {/* Add a spacer div that takes up the safe area inset space */}
+      <div className="h-[env(safe-area-inset-top,0px)]"></div>
       <div className="container flex h-14 items-center">
         <div className="flex flex-1 items-center justify-between">
           {/* Logo and brand */}

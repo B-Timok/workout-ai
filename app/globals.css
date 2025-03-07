@@ -73,5 +73,41 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Add these lines for PWA safe area handling */
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+}
+
+/* Add these new styles for PWA header handling */
+@layer components {
+  /* Fix for navigation header in PWA mode */
+  header.sticky, 
+  header.fixed {
+    padding-top: max(env(safe-area-inset-top, 0px), 0px);
+    height: calc(3.5rem + env(safe-area-inset-top, 0px));
+  }
+
+  /* Adjust content to account for bottom safe area (for iPhones with notch) */
+  .has-safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/* Add utility classes for safe areas */
+@layer utilities {
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .pl-safe {
+    padding-left: env(safe-area-inset-left, 0px);
+  }
+  .pr-safe {
+    padding-right: env(safe-area-inset-right, 0px);
   }
 }
