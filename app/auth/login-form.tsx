@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { useAuthListener } from "@/lib/hooks/useAuthListener";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -15,25 +16,32 @@ export function LoginForm() {
   const router = useRouter();
   const supabase = createClient();
 
-  // Check if there's a stale session on mount
-  useEffect(() => {
-    const checkSession = async () => {
-      try {
-        setCheckingSession(true);
-        // Clear any potential stale/problematic sessions
-        const { error: signOutError } = await supabase.auth.signOut({ scope: 'local' });
-        if (signOutError) {
-          console.error("Error clearing session state:", signOutError);
-        }
-      } catch (e) {
-        console.error("Session check error:", e);
-      } finally {
-        setCheckingSession(false);
+  // Check session status on mount
+  const checkSession = async () => {
+    try {
+      setCheckingSession(true);
+      // Just check the session status, no sign out
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        // If already logged in, redirect to dashboard
+        router.push("/dashboard");
       }
-    };
-    
+    } catch (e) {
+      console.error("Session check error:", e);
+    } finally {
+      setCheckingSession(false);
+    }
+  };
+
+  useEffect(() => {
     checkSession();
   }, []);
+
+  // Listen for authentication changes (tab switching)
+  useAuthListener(() => {
+    console.log("Auth state changed in login form, checking session");
+    checkSession();
+  });
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,10 +49,7 @@ export function LoginForm() {
     setError(null);
 
     try {
-      // First sign out to clear any stale session
-      await supabase.auth.signOut({ scope: 'local' });
-      
-      // Then sign in
+      // Sign in without signing out first
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,

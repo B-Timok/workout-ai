@@ -25,6 +25,8 @@ export default function NavigationHeader() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [avatarId, setAvatarId] = useState<string | null>(null)
   const [userName, setUserName] = useState<string | null>(null)
+  const [profile, setProfile] = useState<any | null>(null)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const pathname = usePathname()
   const supabase = createClient()
 
@@ -37,7 +39,25 @@ export default function NavigationHeader() {
   ]
 
   useEffect(() => {
-    async function getUser() {
+    const fetchProfile = async (user: User | null) => {
+      // Skip if not authenticated
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+          
+        if (error) console.error('Error fetching profile:', error);
+        else setProfile(data);
+      } catch (err) {
+        console.error('Error:', err);
+      }
+    }
+    
+    const getUser = async () => {
       try {
         const {
           data: { user },
@@ -45,8 +65,11 @@ export default function NavigationHeader() {
 
         if (user) {
           setUser(user)
+          setIsLoggedIn(true)
 
           // Get profile data including avatar_id and username
+          await fetchProfile(user)
+
           const { data: profile } = await supabase
             .from("profiles")
             .select("avatar_id, username, full_name")
@@ -73,26 +96,19 @@ export default function NavigationHeader() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const currentUser = session?.user || null
-      setUser(currentUser)
-
-      if (currentUser) {
-        // Refresh profile data on auth state change
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("avatar_id, username, full_name")
-          .eq("id", currentUser.id)
-          .single()
-
-        if (profile) {
-          setAvatarId(profile.avatar_id || null)
-          setUserName(profile.full_name || profile.username || currentUser.email?.split("@")[0] || "User")
-        } else {
-          setUserName(currentUser.email?.split("@")[0] || "User")
+    } = supabase.auth.onAuthStateChange(
+      (event: string, session: any) => {
+        // Update auth state when it changes
+        console.log('Auth state changed in NavHeader', event, session?.user?.id);
+        setIsLoggedIn(!!session);
+        setUser(session?.user || null);
+        
+        // If user just logged in, fetch their profile
+        if (event === 'SIGNED_IN') {
+          fetchProfile(session?.user);
         }
       }
-    })
+    )
 
     return () => {
       subscription.unsubscribe()
@@ -100,7 +116,7 @@ export default function NavigationHeader() {
   }, [supabase])
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
         <div className="flex flex-1 items-center justify-between">
           {/* Logo and brand */}
@@ -245,4 +261,3 @@ export default function NavigationHeader() {
     </header>
   )
 }
-
