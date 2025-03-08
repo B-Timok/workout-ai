@@ -279,7 +279,7 @@ export default function DashboardPage() {
       // Update total workouts count in the stats
       setUserData(prev => ({
         ...prev,
-        totalWorkouts: prev.totalWorkouts - 1
+        totalWorkouts: Math.max(0, prev.totalWorkouts - 1)
       }));
       
     } catch (error) {
@@ -307,7 +307,7 @@ export default function DashboardPage() {
             <CardContent className="p-6">
               <div className="flex items-center gap-2">
                 <Dumbbell className="h-4 w-4 text-muted-foreground" />
-                <p className="text-sm font-medium">Total Workouts</p>
+                <p className="text-sm font-medium">Total Workouts Completed</p>
               </div>
               {isLoading ? (
                 <div className="h-8 w-16 bg-muted/50 rounded animate-pulse mt-2"></div>

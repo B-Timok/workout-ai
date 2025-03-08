@@ -9,12 +9,19 @@ export async function POST() {
   // Sign out the user
   await supabase.auth.signOut();
   
-  // Create a response that redirects to the home page instead of login
-  // This helps break the redirect loop by avoiding the login page
-  const response = NextResponse.redirect(
-    new URL("/login", process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001")
-  );
-  
+  // Get the base URL dynamically
+  // const baseUrl = process.env.NEXT_PUBLIC_APP_URL || // If you ever define it manually
+  const baseUrl =
+    process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000"; // Fallback for local dev
+
+  // Construct absolute URL for redirection
+  const redirectUrl = `${baseUrl}/login`;
+
+  // Redirect user to login page
+  const response = NextResponse.redirect(redirectUrl);
+
   // Explicitly clear all potential Supabase auth cookies
   const authCookies = [
     'sb-access-token',

@@ -10,6 +10,7 @@ export function SignupForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
+  const [fullName, setFullName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -157,7 +158,7 @@ export function SignupForm() {
       // Now update the profile with the username
       const { error: profileError } = await supabase
         .from("profiles")
-        .update({ username: username })
+        .update({ username: username, full_name: fullName })
         .eq("id", user.id);
 
       if (profileError) {
@@ -170,6 +171,7 @@ export function SignupForm() {
       
       // Reset form
       setUsername("");
+      setFullName("");
       setEmail("");
       setPassword("");
       
@@ -259,6 +261,22 @@ export function SignupForm() {
             {getUsernameStatusText()}
           </p>
         )}
+      </div>
+
+      <div>
+        <label htmlFor="fullName" className="block text-sm font-medium">
+          Full Name
+        </label>
+        <input
+          id="fullName"
+          name="fullName"
+          type="text"
+          autoComplete="name"
+          required
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary focus:outline-none"
+        />
       </div>
 
       <div>
