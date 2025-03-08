@@ -8,6 +8,23 @@ import Link from "next/link"
 import NavigationHeader from "@/components/navigation-header";
 import { createClient } from "@/lib/utils/supabase/client";
 
+interface Workout {
+  id: string;
+  name: string;
+  created_at: string;
+  completed?: boolean;
+  completed_at?: string;
+  user_id: string;
+}
+
+interface Goal {
+  id: string;
+  user_id: string;
+  completed: boolean;
+  start_date?: string;
+  end_date?: string;
+}
+
 export default function DashboardPage() {
   // State for user data
   const [userData, setUserData] = useState({
@@ -20,7 +37,7 @@ export default function DashboardPage() {
     progressPercent: 0
   });
   const [userName, setUserName] = useState("User");
-  const [workouts, setWorkouts] = useState<any[]>([]);
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState<string | null>(null);
@@ -117,13 +134,13 @@ export default function DashboardPage() {
         // Calculate monthly goal statistics
         const monthlyGoals = goalsData || [];
         const monthlyGoalsTotal = monthlyGoals.length;
-        const monthlyGoalsCompleted = monthlyGoals.filter(goal => goal.completed).length;
+        const monthlyGoalsCompleted = monthlyGoals.filter((goal: Goal) => goal.completed).length;
         
         // Calculate completed workouts this week
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
         const weeklyWorkouts = completedWorkoutsData
-          ? completedWorkoutsData.filter(w => new Date(w.completed_at) >= oneWeekAgo).length
+          ? completedWorkoutsData.filter((w: Workout) => w.completed_at && new Date(w.completed_at) >= oneWeekAgo).length
           : 0;
           
         // Calculate active streak if not available from user_stats
@@ -138,7 +155,7 @@ export default function DashboardPage() {
           
           // Group workouts by date (to handle multiple workouts per day)
           const workoutsByDate = new Map<string, boolean>();
-          completedWorkoutsData.forEach(workout => {
+          completedWorkoutsData.forEach((workout: Workout) => {
             if (workout.completed_at) {
               const dateKey = new Date(workout.completed_at).toISOString().split('T')[0];
               workoutsByDate.set(dateKey, true);
@@ -391,7 +408,7 @@ export default function DashboardPage() {
                 </div>
               ) : workouts.length > 0 ? (
                 <div className="space-y-4">
-                  {workouts.map((workout) => (
+                  {workouts.map((workout: Workout) => (
                     <div key={workout.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
                       <div className="flex items-center gap-4">
                         <div className="p-2 rounded-md bg-primary/10">
