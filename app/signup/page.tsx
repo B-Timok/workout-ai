@@ -9,10 +9,11 @@ export default async function SignupPage() {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
   
-  const { data: { session } } = await supabase.auth.getSession();
+  // Use getUser instead of getSession for proper authentication
+  const { data: { user } } = await supabase.auth.getUser();
   
   // If the user is already logged in, redirect to the dashboard
-  if (session) {
+  if (user) {
     redirect("/dashboard");
   }
   
@@ -30,12 +31,7 @@ export default async function SignupPage() {
           </div>
           <SignupForm />
           <div className="text-center text-sm">
-            <p>
-              Already have an account?{" "}
-              <Link href="/login" className="font-medium text-primary hover:underline">
-                Sign in
-              </Link>
-            </p>
+            Already have an account? <Link href="/login" className="text-primary hover:underline">Sign in</Link>
           </div>
         </div>
       </main>

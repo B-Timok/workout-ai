@@ -8,13 +8,32 @@ export default async function Home() {
     const cookieStore = cookies()
     const supabase = createClient(cookieStore)
     
-    // Check if user is authenticated
-    const { data: { session }, error } = await supabase.auth.getSession()
+    // Check if user is authenticated using getUser() for security
+    const { data: { user }, error } = await supabase.auth.getUser()
     
     // Handle authentication status
-    if (session) {
-      // Authenticated users go directly to their dashboard
-      return redirect('/dashboard')
+    if (user) {
+      // Verify that user profile exists in database
+      try {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', user.id)
+          .single()
+          
+        if (profileError || !profile) {
+          console.error('Profile validation error:', profileError)
+          // If profile check fails, invalidate session and redirect to login
+          await supabase.auth.signOut()
+          return redirect('/login')
+        }
+        
+        // Authenticated users with valid profile go directly to their dashboard
+        return redirect('/dashboard')
+      } catch (verifyError) {
+        console.error('Session verification error:', verifyError)
+        return redirect('/login')
+      }
     } else {
       // Non-authenticated users go to login
       return redirect('/login')
