@@ -47,12 +47,18 @@ function mergeConfig(nextConfig, userConfig) {
   }
 }
 
+// Add timestamp to ensure service worker updates
+const cacheId = new Date().toISOString();
+
 const pwaConfig = {
   dest: 'public',
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
   sw: 'sw.js',
+  buildExcludes: [/middleware-manifest\.json$/],
+  dynamicStartUrl: false,
+  cacheId,
   runtimeCaching: [
     {
       urlPattern: /^https:\/\/fonts\.(?:gstatic|googleapis)\.com\/.*/i,

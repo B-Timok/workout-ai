@@ -87,7 +87,7 @@
   header.sticky, 
   header.fixed {
     padding-top: max(env(safe-area-inset-top, 0px), 0px);
-    height: calc(3.5rem + env(safe-area-inset-top, 0px));
+    height: calc(3rem + env(safe-area-inset-top, 0px));
   }
 
   /* Adjust content to account for bottom safe area (for iPhones with notch) */

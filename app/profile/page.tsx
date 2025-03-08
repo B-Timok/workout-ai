@@ -1,205 +1,429 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { createClient } from "@/lib/utils/supabase/client";
-import { useRouter } from "next/navigation";
-import NavigationHeader from "@/components/NavigationHeader";
-import Link from "next/link";
+import { useEffect, useState } from "react"
+import { createClient } from "@/lib/utils/supabase/client"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { useToast } from "@/components/ui/use-toast"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import AvatarSelector from "@/components/avatar-selector"
+import { getAvatarEmoji } from "@/lib/utils/avatar"
+import NavigationHeader from "@/components/navigation-header"
+import { Loader2 } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
 
 export default function ProfilePage() {
-  const [loading, setLoading] = useState(true);
-  const [username, setUsername] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [fitnessLevel, setFitnessLevel] = useState("");
-  const [fitnessGoals, setFitnessGoals] = useState("");
-  const [height, setHeight] = useState("");
-  const [weight, setWeight] = useState("");
-  const router = useRouter();
-  const supabase = createClient();
+  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<any>(null)
+  const [profile, setProfile] = useState<any>(null)
+  const [username, setUsername] = useState("")
+  const [fullName, setFullName] = useState("")
+  const [saving, setSaving] = useState(false)
+  const supabase = createClient()
+  const { toast } = useToast()
+  const [fitnessLevel, setFitnessLevel] = useState("not_specified")
+  
+  // Personal details
+  const [age, setAge] = useState("")
+  const [gender, setGender] = useState("not_specified")
+  const [height, setHeight] = useState("")
+  const [weight, setWeight] = useState("")
+  
+  // Workout preferences
+  const [fitnessGoals, setFitnessGoals] = useState("")
+  const [workoutDuration, setWorkoutDuration] = useState("30")
+  const [exercisesPerWorkout, setExercisesPerWorkout] = useState("5")
+  const [workoutLocation, setWorkoutLocation] = useState("home")
+  const [availableEquipment, setAvailableEquipment] = useState<string[]>([])
+  const [healthLimitations, setHealthLimitations] = useState("")
 
   useEffect(() => {
-    // Get user profile data
     async function getProfile() {
-      setLoading(true);
-      
-      // Get the current user
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        router.push("/login");
-        return;
-      }
-      
-      // Get the profile data
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-        
-      if (data) {
-        setUsername(data.username || "");
-        setFullName(data.full_name || "");
-        setFitnessLevel(data.fitness_level || "");
-        setFitnessGoals(data.fitness_goals || "");
-        setHeight(data.height?.toString() || "");
-        setWeight(data.weight?.toString() || "");
-      }
-      
-      setLoading(false);
-    }
-    
-    getProfile();
-  }, [router, supabase]);
+      try {
+        setLoading(true)
 
-  async function updateProfile(e: { preventDefault: () => void; }) {
-    e.preventDefault();
-    setLoading(true);
-    
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      return;
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+
+        if (!user) {
+          window.location.href = "/login"
+          return
+        }
+
+        setUser(user)
+
+        // Get profile data
+        const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).single()
+
+        if (error && error.code !== "PGRST116") {
+          throw error
+        }
+
+        if (data) {
+          setProfile(data)
+          setUsername(data.username || "")
+          setFullName(data.full_name || "")
+          setFitnessLevel(data.fitness_level || "not_specified")
+          setAge(data.age?.toString() || "")
+          setGender(data.gender || "not_specified")
+          setHeight(data.height?.toString() || "")
+          setWeight(data.weight?.toString() || "")
+          setFitnessGoals(data.fitness_goals || "")
+          setWorkoutDuration(data.workout_duration?.toString() || "30")
+          setExercisesPerWorkout(data.exercises_per_workout?.toString() || "5")
+          setWorkoutLocation(data.workout_location || "home")
+          setAvailableEquipment(data.available_equipment || [])
+          setHealthLimitations(data.health_limitations || "")
+        } else {
+          // Create a profile if it doesn't exist
+          const { data: newProfile, error: insertError } = await supabase
+            .from("profiles")
+            .insert([
+              {
+                id: user.id,
+                username: user.email?.split("@")[0] || "",
+                avatar_id: "dumbbell", // Default avatar
+              },
+            ])
+            .select()
+            .single()
+
+          if (insertError) throw insertError
+
+          if (newProfile) {
+            setProfile(newProfile)
+            setUsername(newProfile.username || "")
+          }
+        }
+      } catch (error) {
+        console.error("Error loading profile:", error)
+      } finally {
+        setLoading(false)
+      }
     }
-    
-    const updates = {
-      id: user.id,
-      username,
-      full_name: fullName,
-      fitness_level: fitnessLevel,
-      fitness_goals: fitnessGoals,
-      height: height ? parseFloat(height) : null,
-      weight: weight ? parseFloat(weight) : null,
-      updated_at: new Date(),
-    };
-    
-    const { error } = await supabase
-    .from("profiles")
-    .upsert(updates);
-    
-    if (error) {
-      alert(`Error updating profile: ${error.message}`);
+
+    getProfile()
+  }, [supabase])
+
+  const updateProfile = async () => {
+    try {
+      setSaving(true)
+
+      if (!user) return
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          username,
+          full_name: fullName,
+          updated_at: new Date().toISOString(),
+          fitness_level: fitnessLevel,
+          age: age ? parseInt(age) : null,
+          gender,
+          height: height ? parseFloat(height) : null,
+          weight: weight ? parseFloat(weight) : null,
+          fitness_goals: fitnessGoals,
+          workout_duration: workoutDuration ? parseInt(workoutDuration) : 30,
+          exercises_per_workout: exercisesPerWorkout ? parseInt(exercisesPerWorkout) : 5,
+          workout_location: workoutLocation,
+          available_equipment: availableEquipment,
+          health_limitations: healthLimitations,
+        })
+        .eq("id", user.id)
+
+      if (error) throw error
+
+      toast({
+        title: "Profile updated",
+        description: "Your profile information has been updated successfully.",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Update failed",
+        description: error.message,
+        variant: "destructive",
+      })
+      console.error("Error updating profile:", error)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleAvatarSelect = (avatarId: string) => {
+    setProfile({ ...profile, avatar_id: avatarId })
+  }
+
+  const toggleEquipment = (equipment: string) => {
+    if (availableEquipment.includes(equipment)) {
+      setAvailableEquipment(availableEquipment.filter((item) => item !== equipment))
     } else {
-      alert("Profile updated successfully!");
+      setAvailableEquipment([...availableEquipment, equipment])
     }
-    
-    setLoading(false);
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <NavigationHeader />
+        <main className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </main>
+      </div>
+    )
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex min-h-screen flex-col">
       <NavigationHeader />
-      
-      <main className="flex-1">
-        <div className="container py-8 max-w-md mx-auto">
-          <div className="flex items-center mb-6">
-            <button 
-              onClick={() => router.push('/dashboard')} 
-              className="mr-4 p-2 rounded-full hover:bg-black"
-              aria-label="Back to dashboard"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 12H5M12 19l-7-7 7-7"/>
-              </svg>
-            </button>
-            <h1 className="text-2xl font-bold">Your Profile</h1>
-          </div>
-          
-          <form onSubmit={updateProfile} className="space-y-4">
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium">
-                Username
-              </label>
-              <input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="mt-1 block w-full rounded-md border p-2"
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="fullName" className="block text-sm font-medium">
-                Full Name
-              </label>
-              <input
-                id="fullName"
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="mt-1 block w-full rounded-md border p-2"
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="fitnessLevel" className="block text-sm font-medium">
-                Fitness Level
-              </label>
-              <select
-                id="fitnessLevel"
-                value={fitnessLevel}
-                onChange={(e) => setFitnessLevel(e.target.value)}
-                className="mt-1 block w-full rounded-md border p-2"
-              >
-                <option value="">Select your fitness level</option>
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="advanced">Advanced</option>
-              </select>
-            </div>
-            
-            <div>
-              <label htmlFor="fitnessGoals" className="block text-sm font-medium">
-                Fitness Goals
-              </label>
-              <textarea
-                id="fitnessGoals"
-                value={fitnessGoals}
-                onChange={(e) => setFitnessGoals(e.target.value)}
-                className="mt-1 block w-full rounded-md border p-2"
-                rows={3}
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="height" className="block text-sm font-medium">
-                Height (inches)
-              </label>
-              <input
-                id="height"
-                type="number"
-                value={height}
-                onChange={(e) => setHeight(e.target.value)}
-                className="mt-1 block w-full rounded-md border p-2"
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="weight" className="block text-sm font-medium">
-                Weight (lbs)
-              </label>
-              <input
-                id="weight"
-                type="number"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-                className="mt-1 block w-full rounded-md border p-2"
-              />
-            </div>
-            
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-2 px-4 bg-primary text-white rounded-md disabled:opacity-50"
-              >
-                {loading ? "Saving..." : "Save Profile"}
-              </button>
-            </div>
-          </form>
-        </div>
+      <main className="flex-1 container max-w-4xl py-8 px-4">
+        <h1 className="text-3xl font-bold mb-6">Your Profile</h1>
+
+        <Tabs defaultValue="info">
+          <TabsList className="mb-6">
+            <TabsTrigger value="info">Profile Info</TabsTrigger>
+            <TabsTrigger value="workout">Workout Preferences</TabsTrigger>
+            <TabsTrigger value="avatar">Avatar</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="info">
+            <Card>
+              <CardHeader>
+                <CardTitle>Personal Information</CardTitle>
+                <CardDescription>Update your personal details here.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" value={user?.email || ""} disabled />
+                  <p className="text-xs text-muted-foreground">Your email cannot be changed.</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                    id="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Enter your username"
+                    disabled
+                  />
+                  <p className="text-xs text-muted-foreground">Username cannot be changed once set.</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Full Name</Label>
+                  <Input
+                    id="fullName"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Enter your full name"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="age">Age</Label>
+                    <Input
+                      id="age"
+                      type="number"
+                      min="18"
+                      max="99"
+                      value={age}
+                      onChange={(e) => setAge(e.target.value)}
+                      placeholder="Enter your age"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="gender">Gender</Label>
+                    <Select value={gender} onValueChange={setGender}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select your gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="not_specified">Prefer not to say</SelectItem>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                        <SelectItem value="non_binary">Non-binary</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="height">Height (inches)</Label>
+                    <Input
+                      id="height"
+                      type="number"
+                      min="36"
+                      max="96"
+                      value={height}
+                      onChange={(e) => setHeight(e.target.value)}
+                      placeholder="Enter your height"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="weight">Weight (lbs)</Label>
+                    <Input
+                      id="weight"
+                      type="number"
+                      min="50"
+                      max="500"
+                      value={weight}
+                      onChange={(e) => setWeight(e.target.value)}
+                      placeholder="Enter your weight"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Fitness Level</Label>
+                  <Select value={fitnessLevel} onValueChange={setFitnessLevel}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select your fitness level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="not_specified">Not specified</SelectItem>
+                      <SelectItem value="beginner">Beginner</SelectItem>
+                      <SelectItem value="intermediate">Intermediate</SelectItem>
+                      <SelectItem value="advanced">Advanced</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button onClick={updateProfile} disabled={saving} className="w-full">
+                  {saving ? "Saving..." : "Save Changes"}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="workout">
+            <Card>
+              <CardHeader>
+                <CardTitle>Workout Preferences</CardTitle>
+                <CardDescription>Customize your workout generation settings.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="fitnessGoals">Fitness Goals</Label>
+                  <Textarea
+                    id="fitnessGoals"
+                    value={fitnessGoals}
+                    onChange={(e) => setFitnessGoals(e.target.value)}
+                    placeholder="Describe your fitness goals (e.g. lose weight, build muscle, improve endurance)"
+                    className="min-h-24"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="workoutDuration">Preferred Workout Duration (minutes)</Label>
+                    <Input
+                      id="workoutDuration"
+                      type="number"
+                      min="10"
+                      max="120"
+                      value={workoutDuration}
+                      onChange={(e) => setWorkoutDuration(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="exercisesPerWorkout">Exercises Per Workout</Label>
+                    <Input
+                      id="exercisesPerWorkout"
+                      type="number"
+                      min="3"
+                      max="15"
+                      value={exercisesPerWorkout}
+                      onChange={(e) => setExercisesPerWorkout(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="workoutLocation">Workout Location</Label>
+                  <Select value={workoutLocation} onValueChange={setWorkoutLocation}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select workout location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="home">Home</SelectItem>
+                      <SelectItem value="gym">Gym</SelectItem>
+                      <SelectItem value="outdoors">Outdoors</SelectItem>
+                      <SelectItem value="mixed">Mixed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-3">
+                  <Label>Available Equipment</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {["Dumbbells", "Barbell", "Kettlebell", "Resistance Bands", "Pull-up Bar", "Bench", 
+                      "Treadmill", "Exercise Bike", "Rowing Machine", "Medicine Ball", "Yoga Mat", "None"].map((equipment) => (
+                      <div key={equipment} className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={`equipment-${equipment}`} 
+                          checked={availableEquipment.includes(equipment)}
+                          onCheckedChange={() => toggleEquipment(equipment)}
+                        />
+                        <Label 
+                          htmlFor={`equipment-${equipment}`}
+                          className="text-sm cursor-pointer"
+                        >
+                          {equipment}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="healthLimitations">Health Limitations or Injuries</Label>
+                  <Textarea
+                    id="healthLimitations"
+                    value={healthLimitations}
+                    onChange={(e) => setHealthLimitations(e.target.value)}
+                    placeholder="Describe any health limitations or injuries we should consider when generating workouts"
+                  />
+                </div>
+
+                <Button onClick={updateProfile} disabled={saving} className="w-full">
+                  {saving ? "Saving..." : "Save Workout Preferences"}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="avatar">
+            <Card>
+              <CardHeader>
+                <CardTitle>Choose Your Avatar</CardTitle>
+                <CardDescription>Select an avatar to represent you.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col items-center mb-6">
+                  <div className="h-24 w-24 rounded-full bg-secondary flex items-center justify-center text-5xl mb-4">
+                    {getAvatarEmoji(profile?.avatar_id)}
+                  </div>
+                  <p className="text-sm text-muted-foreground">Your current avatar</p>
+                </div>
+
+                <AvatarSelector userId={user.id} currentAvatar={profile?.avatar_id} onSelect={handleAvatarSelect} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
-  );
+  )
 }

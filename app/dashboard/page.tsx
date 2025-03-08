@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { CalendarDays, Dumbbell, LineChart, Plus, Target, Trash2, TrendingUp } from "lucide-react"
 import Link from "next/link"
-import NavigationHeader from "@/components/NavigationHeader";
+import NavigationHeader from "@/components/navigation-header";
 import { createClient } from "@/lib/utils/supabase/client";
 
 export default function DashboardPage() {

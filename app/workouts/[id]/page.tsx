@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/utils/supabase/client"
-import NavigationHeader from "@/components/NavigationHeader"
+import NavigationHeader from "@/components/navigation-header"
 import { Check, Clock, ArrowLeft, Trash2, Award, Calendar } from "lucide-react"
 
 // Type definition for exercises

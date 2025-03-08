@@ -2,7 +2,8 @@ import { SignupForm } from "@/app/auth/signup-form";
 import { createClient } from "@/lib/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import NavigationHeader from "@/components/NavigationHeader";
+import NavigationHeader from "@/components/navigation-header";
+import Link from "next/link";
 
 export default async function SignupPage() {
   const cookieStore = cookies();
@@ -31,9 +32,9 @@ export default async function SignupPage() {
           <div className="text-center text-sm">
             <p>
               Already have an account?{" "}
-              <a href="/login" className="font-medium text-primary hover:underline">
+              <Link href="/login" className="font-medium text-primary hover:underline">
                 Sign in
-              </a>
+              </Link>
             </p>
           </div>
         </div>
