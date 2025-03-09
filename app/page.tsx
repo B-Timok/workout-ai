@@ -25,22 +25,22 @@ export default async function Home() {
           console.error('Profile validation error:', profileError)
           // If profile check fails, invalidate session and redirect to login
           await supabase.auth.signOut()
-          return redirect('/login')
+          return redirect('/home')
         }
         
         // Authenticated users with valid profile go directly to their dashboard
         return redirect('/dashboard')
       } catch (verifyError) {
         console.error('Session verification error:', verifyError)
-        return redirect('/login')
+        return redirect('/home')
       }
     } else {
-      // Non-authenticated users go to login
-      return redirect('/login')
+      // Non-authenticated users go to home
+      return redirect('/home')
     }
   } catch (error) {
-    // If any auth errors occur, just redirect to login
+    // If any auth errors occur, just redirect to home
     console.error('Auth error:', error)
-    return redirect('/login')
+    return redirect('/home')
   }
 }

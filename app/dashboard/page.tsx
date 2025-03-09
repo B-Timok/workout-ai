@@ -409,32 +409,32 @@ export default function DashboardPage() {
               ) : workouts.length > 0 ? (
                 <div className="space-y-4">
                   {workouts.map((workout: Workout) => (
-                    <div key={workout.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
-                      <div className="flex items-center gap-4">
+                    <div key={workout.id} className="flex flex-col md:flex-row items-start md:items-center justify-between p-2 rounded-lg bg-muted/50">
+                      <div className="flex items-center gap-4 mb-2 md:mb-0">
                         <div className="p-2 rounded-md bg-primary/10">
                           <Dumbbell className="h-4 w-4 text-primary" />
                         </div>
                         <div>
                           <p className="font-medium">{workout.name || "Workout Plan"}</p>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <CalendarDays className="h-3 w-3" />
-                            <span>{formatDateTime(workout.created_at)}</span>
+                          <CalendarDays className="h-3 w-3" />
+                          <span>{formatDateTime(workout.created_at)}</span>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" asChild>
+                        </div>
+                        <div className="flex items-center gap-2 justify-between w-full md:w-auto">
+                        <Button variant="outline" size="sm" asChild className="mx-auto">
                           <Link href={`/workouts/${workout.id}`}>View Details</Link>
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="icon" 
-                          className="text-destructive"
+                          className="text-destructive ml-auto"
                           onClick={() => setShowDeleteConfirmation(workout.id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
-                      </div>
+                        </div>
                     </div>
                   ))}
                 </div>

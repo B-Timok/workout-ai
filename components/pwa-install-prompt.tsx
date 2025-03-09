@@ -50,7 +50,7 @@ export function PWAInstallPrompt() {
     <div className="fixed bottom-4 right-4 z-50">
       <Card className="w-80 shadow-lg border-primary/20">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg">Install Workout Assistant</CardTitle>
+          <CardTitle className="text-lg">Install Athlos</CardTitle>
           <CardDescription>Get quick access on your device</CardDescription>
         </CardHeader>
         <CardContent className="pb-2">

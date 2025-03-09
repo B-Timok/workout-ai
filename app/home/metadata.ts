@@ -1,8 +1,7 @@
 import type { Metadata, Viewport } from 'next'
-
 export const metadata: Metadata = {
-  title: 'Home Coming Soon - Workout AI',
-  description: 'We\'re working on the home page. Meanwhile, enjoy a game of Tic Tac Toe!',
+  title: 'Home - Athlos',
+  description: 'Your personalized fitness assistant',
 }
 
 export const viewport: Viewport = {

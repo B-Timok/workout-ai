@@ -11,7 +11,7 @@ import ClientWrapper from "@/components/client-wrapper"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Workout Assistant",
+  title: "Athlos",
   description: "Generate personalized workout routines with AI",
   generator: 'v0.dev',
   // PWA functionality disabled

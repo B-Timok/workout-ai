@@ -60,7 +60,7 @@ export function ChatInterface() {
         <div className="space-y-4">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center p-8">
-              <h3 className="text-lg font-medium">Welcome to your AI Workout Assistant!</h3>
+              <h3 className="text-lg font-medium">Hello, I'm Athlos!</h3>
               <p className="text-muted-foreground mt-2">
                 Ask me to create a workout routine based on your goals and fitness level.
               </p>

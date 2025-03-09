@@ -14,10 +14,10 @@ export async function POST() {
   const baseUrl =
     process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000"; // Fallback for local dev
+      : "http://localhost:3001"; // Fallback for local dev
 
   // Construct absolute URL for redirection
-  const redirectUrl = `${baseUrl}/login`;
+  const redirectUrl = `${baseUrl}/home`;
 
   // Redirect user to login page
   const response = NextResponse.redirect(redirectUrl);

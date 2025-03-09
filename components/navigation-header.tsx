@@ -33,7 +33,7 @@ export default function NavigationHeader() {
   const isActivePath = (path: string) => pathname === path
 
   const navigationItems = [
-    { href: "/home-coming-soon", label: "Home", icon: HomeIcon },
+    { href: "/workouts", label: "Workouts", icon: Dumbbell },
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/profile", label: "Profile", icon: User2 },
   ]
@@ -121,9 +121,9 @@ export default function NavigationHeader() {
       <div className="hidden md:block relative w-full h-14">
         {/* Logo and brand - far left */}
         <div className="absolute left-4 top-0 h-full flex items-center">
-          <Link href="/dashboard" className="flex items-center space-x-2">
+          <Link href={user ? "/dashboard" : pathname} className="flex items-center space-x-2">
             <Dumbbell className="h-6 w-6 text-primary" />
-            <span className="font-bold">Workout Assistant</span>
+            <span className="font-bold">Athlos</span>
           </Link>
         </div>
 
@@ -204,12 +204,12 @@ export default function NavigationHeader() {
 
       {/* Mobile Header */}
       <div className="flex md:hidden items-center justify-between h-14 px-4">
-        <Link href="/dashboard" className="flex items-center">
+        <Link href={user ? "/dashboard" : pathname} className="flex items-center">
           <Dumbbell className="h-6 w-6 text-primary" />
         </Link>
 
         {/* Mobile centered title */}
-        <span className="font-bold absolute left-1/2 transform -translate-x-1/2">Workout Assistant</span>
+        <span className="font-bold absolute left-1/2 transform -translate-x-1/2">Athlos</span>
 
         {/* Mobile Menu Button */}
         {user && (
